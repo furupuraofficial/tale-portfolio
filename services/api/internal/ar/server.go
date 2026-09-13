@@ -1,11 +1,17 @@
 package ar
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
+	"strings"
 	"sync"
+	"time"
 
 	"tale-backend/internal/realtime"
 
@@ -13,9 +19,7 @@ import (
 )
 
 var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins for now (adjust for production)
-	},
+	CheckOrigin: websocketOriginAllowed,
 }
 
 // Server manages WebSocket connections to AR frontends
@@ -23,6 +27,8 @@ type Server struct {
 	clients    map[*websocket.Conn]bool
 	clientsMux sync.RWMutex
 	broadcast  chan realtime.ChatAndARResponse
+	serverMux  sync.RWMutex
+	httpServer *http.Server
 }
 
 // NewServer creates a new AR server
@@ -40,8 +46,14 @@ func (s *Server) Start(port int) error {
 
 	// Health check endpoint
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			w.Header().Set("Allow", http.MethodGet)
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 	})
 
 	// Start broadcast goroutine
@@ -51,7 +63,38 @@ func (s *Server) Start(port int) error {
 	fmt.Printf("AR Server starting on %s\n", addr)
 	fmt.Printf("WebSocket endpoint: ws://localhost%s/ws\n", addr)
 
-	return http.ListenAndServe(addr, nil)
+	httpServer := &http.Server{
+		Addr:              addr,
+		Handler:           securityHeaders(http.DefaultServeMux),
+		ReadHeaderTimeout: 5 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+	s.serverMux.Lock()
+	s.httpServer = httpServer
+	s.serverMux.Unlock()
+
+	if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
+}
+
+// Shutdown stops accepting requests and closes active WebSocket connections.
+func (s *Server) Shutdown(ctx context.Context) error {
+	s.clientsMux.Lock()
+	for client := range s.clients {
+		_ = client.Close()
+		delete(s.clients, client)
+	}
+	s.clientsMux.Unlock()
+
+	s.serverMux.RLock()
+	httpServer := s.httpServer
+	s.serverMux.RUnlock()
+	if httpServer == nil {
+		return nil
+	}
+	return httpServer.Shutdown(ctx)
 }
 
 // handleWebSocket handles WebSocket connections from AR frontends
@@ -91,18 +134,66 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 func (s *Server) broadcastLoop() {
 	for response := range s.broadcast {
 		s.clientsMux.RLock()
+		clients := make([]*websocket.Conn, 0, len(s.clients))
 		for client := range s.clients {
+			clients = append(clients, client)
+		}
+		s.clientsMux.RUnlock()
+
+		for _, client := range clients {
 			err := client.WriteJSON(response)
 			if err != nil {
 				log.Printf("Error broadcasting to client: %v", err)
-				client.Close()
+				_ = client.Close()
 				s.clientsMux.Lock()
 				delete(s.clients, client)
 				s.clientsMux.Unlock()
 			}
 		}
-		s.clientsMux.RUnlock()
 	}
+}
+
+func websocketOriginAllowed(r *http.Request) bool {
+	origin := strings.TrimSpace(r.Header.Get("Origin"))
+	if origin == "" {
+		// Native clients such as the iOS app do not send a browser Origin header.
+		return true
+	}
+
+	normalized, ok := normalizeOrigin(origin)
+	if !ok {
+		return false
+	}
+	originURL, _ := url.Parse(normalized)
+	if strings.EqualFold(originURL.Host, r.Host) {
+		return true
+	}
+
+	for _, allowed := range strings.Split(os.Getenv("TALE_ALLOWED_ORIGINS"), ",") {
+		if candidate, valid := normalizeOrigin(allowed); valid && candidate == normalized {
+			return true
+		}
+	}
+	return false
+}
+
+func normalizeOrigin(value string) (string, bool) {
+	parsed, err := url.Parse(strings.TrimSpace(value))
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return "", false
+	}
+	if parsed.User != nil || (parsed.Path != "" && parsed.Path != "/") || parsed.RawQuery != "" || parsed.Fragment != "" {
+		return "", false
+	}
+	return strings.ToLower(parsed.Scheme) + "://" + strings.ToLower(parsed.Host), true
+}
+
+func securityHeaders(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Referrer-Policy", "no-referrer")
+		next.ServeHTTP(w, r)
+	})
 }
 
 // SendResponse sends an AR response to all connected clients

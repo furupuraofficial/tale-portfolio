@@ -376,6 +376,7 @@ type Rule struct {
 var (
 	ErrRuleNotFound = errors.New("rule not found")
 	ErrRuleExists   = errors.New("rule already exists")
+	ErrRuleInvalid  = errors.New("invalid rule")
 )
 
 var (
@@ -492,13 +493,13 @@ func normalizeRule(rule Rule) Rule {
 func validateRule(rule Rule) error {
 	switch {
 	case rule.ID == "":
-		return fmt.Errorf("rule id is required")
+		return fmt.Errorf("%w: rule id is required", ErrRuleInvalid)
 	case len(rule.Keywords) == 0:
-		return fmt.Errorf("at least one keyword is required")
+		return fmt.Errorf("%w: at least one keyword is required", ErrRuleInvalid)
 	case rule.Question == "":
-		return fmt.Errorf("question is required")
+		return fmt.Errorf("%w: question is required", ErrRuleInvalid)
 	case rule.Answer == "":
-		return fmt.Errorf("answer is required")
+		return fmt.Errorf("%w: answer is required", ErrRuleInvalid)
 	default:
 		return nil
 	}

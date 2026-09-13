@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -81,6 +83,9 @@ func decodeRule(w http.ResponseWriter, r *http.Request, destination *realtime.Ru
 	if err := decoder.Decode(destination); err != nil {
 		return fmt.Errorf("invalid request body: %w", err)
 	}
+	if err := decoder.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+		return fmt.Errorf("request body must contain exactly one JSON object")
+	}
 	return nil
 }
 
@@ -90,7 +95,10 @@ func writeRuleError(w http.ResponseWriter, err error) {
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": err.Error()})
 	case errors.Is(err, realtime.ErrRuleExists):
 		writeJSON(w, http.StatusConflict, map[string]string{"error": err.Error()})
-	default:
+	case errors.Is(err, realtime.ErrRuleInvalid):
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+	default:
+		log.Printf("Rule API error: %v", err)
+		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 	}
 }

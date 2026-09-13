@@ -79,6 +79,8 @@ go mod download
 cp .env.example .env
 ```
 
+ブラウザからWebSocketへ接続する場合は、許可するOriginを `TALE_ALLOWED_ORIGINS` にカンマ区切りで指定します。同一OriginおよびOriginヘッダーを送らないiOSネイティブクライアントは追加設定なしで接続できます。待受ポートは `PORT`（既定値 `8080`）で変更できます。
+
 ### 3. PostgreSQL起動 (オプション)
 
 ```bash

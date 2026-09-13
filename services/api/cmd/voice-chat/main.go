@@ -6,7 +6,9 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
+	"time"
 
 	"tale-backend/internal/api"
 	"tale-backend/internal/ar"
@@ -58,11 +60,12 @@ func main() {
 	api.RegisterSwiftAPI(arServer, client)
 	api.RegisterRuleAPI()
 
-	go func() {
-		if err := arServer.Start(8080); err != nil {
-			log.Printf("AR Server error: %v", err)
-		}
-	}()
+	port, err := serverPort()
+	if err != nil {
+		log.Fatal(err)
+	}
+	serverErr := make(chan error, 1)
+	go func() { serverErr <- arServer.Start(port) }()
 
 	arServer.ConnectRealtimeClient(client)
 	client.LoadHistory()
@@ -75,7 +78,20 @@ func main() {
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-	<-sigChan
+	select {
+	case signalReceived := <-sigChan:
+		log.Printf("Received %s, shutting down", signalReceived)
+	case err := <-serverErr:
+		if err != nil {
+			log.Printf("AR Server error: %v", err)
+		}
+	}
+
+	shutdownContext, cancelShutdown := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelShutdown()
+	if err := arServer.Shutdown(shutdownContext); err != nil {
+		log.Printf("Warning: failed to stop HTTP server cleanly: %v", err)
+	}
 
 	if err := client.SaveHistory(); err != nil {
 		log.Printf("Warning: failed to save history: %v", err)
@@ -83,4 +99,16 @@ func main() {
 
 	msgCount, turnCount := client.GetHistoryStats()
 	fmt.Printf("Conversation stats: %d messages (%d turns)\n", msgCount, turnCount)
+}
+
+func serverPort() (int, error) {
+	value := os.Getenv("PORT")
+	if value == "" {
+		return 8080, nil
+	}
+	port, err := strconv.Atoi(value)
+	if err != nil || port < 1 || port > 65535 {
+		return 0, fmt.Errorf("PORT must be an integer between 1 and 65535")
+	}
+	return port, nil
 }

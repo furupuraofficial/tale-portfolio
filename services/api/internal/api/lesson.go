@@ -1,6 +1,7 @@
 package api
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strings"
@@ -8,6 +9,8 @@ import (
 
 	"tale-backend/internal/lesson"
 	"tale-backend/internal/realtime"
+
+	"github.com/jackc/pgx/v5"
 )
 
 var realtimeClient *realtime.Client
@@ -34,7 +37,8 @@ func RegisterLessonAPI(repo *lesson.Repository) {
 
 		lessons, err := repo.GetAllLessons(r.Context())
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			log.Printf("List lessons: %v", err)
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 			return
 		}
 
@@ -71,7 +75,7 @@ func RegisterLessonAPI(repo *lesson.Repository) {
 		case len(parts) == 1 && r.Method == http.MethodGet:
 			lessonData, err := repo.GetLessonWithSteps(r.Context(), lessonID)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusNotFound)
+				writeLessonRepositoryError(w, "Get lesson", err)
 				return
 			}
 			writeJSON(w, http.StatusOK, lessonData)
@@ -80,7 +84,7 @@ func RegisterLessonAPI(repo *lesson.Repository) {
 		case len(parts) == 2 && parts[1] == "steps" && r.Method == http.MethodGet:
 			steps, err := repo.GetStepsByLessonID(r.Context(), lessonID)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				writeLessonRepositoryError(w, "List lesson steps", err)
 				return
 			}
 			writeJSON(w, http.StatusOK, steps)
@@ -90,7 +94,7 @@ func RegisterLessonAPI(repo *lesson.Repository) {
 			stepID := parts[2]
 			step, err := repo.GetStepByID(r.Context(), lessonID, stepID)
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusNotFound)
+				writeLessonRepositoryError(w, "Get lesson step", err)
 				return
 			}
 			writeJSON(w, http.StatusOK, step)
@@ -107,7 +111,11 @@ func handleLessonStart(w http.ResponseWriter, r *http.Request, repo *lesson.Repo
 	// Get all steps for this lesson
 	steps, err := repo.GetStepsByLessonID(r.Context(), lessonID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusNotFound)
+		writeLessonRepositoryError(w, "Start lesson", err)
+		return
+	}
+	if len(steps) == 0 {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "lesson not found"})
 		return
 	}
 
@@ -133,6 +141,15 @@ func handleLessonStart(w http.ResponseWriter, r *http.Request, repo *lesson.Repo
 		"current":     0,
 		"step":        session.Current(),
 	})
+}
+
+func writeLessonRepositoryError(w http.ResponseWriter, operation string, err error) {
+	if errors.Is(err, pgx.ErrNoRows) {
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "lesson resource not found"})
+		return
+	}
+	log.Printf("%s: %v", operation, err)
+	writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
 }
 
 // handleLessonNext advances to the next step

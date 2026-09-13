@@ -84,6 +84,21 @@ func TestRuleCreateRejectsInvalidInput(t *testing.T) {
 	}
 }
 
+func TestRuleCreateRejectsMultipleJSONValues(t *testing.T) {
+	rulesPath := filepath.Join(t.TempDir(), "rules.json")
+	if err := os.WriteFile(rulesPath, []byte("[]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := realtime.LoadRules(rulesPath); err != nil {
+		t.Fatal(err)
+	}
+
+	response := requestRule(t, http.MethodPost, "/rule/items", `{"keywords":["one"],"question":"q","answer":"a"} {}`)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
+	}
+}
+
 func requestRule(t *testing.T, method, target, body string) *httptest.ResponseRecorder {
 	t.Helper()
 	request := httptest.NewRequest(method, target, strings.NewReader(body))
