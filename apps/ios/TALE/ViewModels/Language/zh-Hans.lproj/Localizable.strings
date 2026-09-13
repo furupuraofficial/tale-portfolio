@@ -1,0 +1,12 @@
+"select_language_title" = "请选择语言";
+"select_language_subtitle" = "选择一种语言";
+"tap_to_start" = "点按开始";
+"restaurant_title" = "推荐餐厅";
+"support_prompt" = "请输入您的咨询内容。";
+"support_subject_placeholder" = "主题";
+"support_send_button" = "发送";
+"support_title" = "联系我们";
+"support_close" = "关闭";
+"support_mail_unavailable_title" = "无法发送邮件";
+"support_mail_unavailable_body" = "尚未设置邮件账号，请复制内容后手动发送。";
+"support_copy" = "复制";

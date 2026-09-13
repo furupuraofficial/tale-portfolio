@@ -1,0 +1,39 @@
+# macOS / editors
+.DS_Store
+**/.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Local and IDE-specific settings
+.claude/settings.local.json
+**/xcuserdata/
+**/*.xcuserstate
+**/.swiftpm/xcode/xcuserdata/
+
+# Local secrets (keep documented templates)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Runtime and generated data
+**/conversation_history.json
+**/.cache/
+**/.gocache/
+**/node_modules/
+**/build/
+**/coverage/
+
+# Build artifacts
+backend/voice-chat
+backend/tale-voice-chat
+backend/tale-backend
+services/api/voice-chat
+services/api/tale-voice-chat
+services/api/tale-backend
+*.test
+*.out
+
+# Creative-tool backups
+*.blend1

@@ -1,0 +1,12 @@
+"select_language_title" = "언어를 선택하세요";
+"select_language_subtitle" = "원하는 언어를 선택하세요";
+"tap_to_start" = "탭하여 시작";
+"restaurant_title" = "추천 레스토랑";
+"support_prompt" = "문의 내용을 입력해주세요.";
+"support_subject_placeholder" = "제목";
+"support_send_button" = "보내기";
+"support_title" = "문의하기";
+"support_close" = "닫기";
+"support_mail_unavailable_title" = "메일을 보낼 수 없습니다";
+"support_mail_unavailable_body" = "메일 설정이 되어 있지 않아 전송할 수 없습니다.\n내용을 복사해 직접 보내주세요.";
+"support_copy" = "복사";

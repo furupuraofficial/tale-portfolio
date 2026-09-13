@@ -1,0 +1,42 @@
+[
+  {
+    "id": "wifi",
+    "keywords": ["wifi", "ワイファイ", "インターネット", "internet", "password", "パスワード"],
+    "question": "Is there WiFi available?",
+    "answer": "Yes! We have free WiFi throughout the inn. The password is 'zashiki2024'. You can connect from your room or the common areas. If you have any trouble connecting, just let me know!",
+    "arActions": [
+      {"type": "IDLE", "target": "zashiki"},
+      {"type": "SHOW_INFO_PANEL", "target": "wifi_info"}
+    ]
+  },
+  {
+    "id": "checkout_time",
+    "keywords": ["checkout", "チェックアウト", "check out", "leaving", "退出"],
+    "question": "What time is checkout?",
+    "answer": "Checkout time is 10 AM. If you need a late checkout, please let the front desk know in advance. We'll do our best to accommodate you!",
+    "arActions": [
+      {"type": "IDLE", "target": "zashiki"},
+      {"type": "SHOW_SPEECH_BUBBLE", "target": "zashiki"}
+    ]
+  },
+  {
+    "id": "smoking",
+    "keywords": ["smoking", "smoke", "喫煙", "たばこ", "タバコ", "煙草", "cigarette"],
+    "question": "Is smoking allowed?",
+    "answer": "This is a non-smoking inn. However, there's a designated smoking area outside near the entrance. Please use that area if you need to smoke. This helps keep the air fresh for all guests!",
+    "arActions": [
+      {"type": "PLAY_ANIMATION", "target": "zashiki", "params": {"name": "point_outside"}},
+      {"type": "MOVE_TO_NODE", "target": "entrance"}
+    ]
+  },
+  {
+    "id": "garbage",
+    "keywords": ["garbage", "trash", "ゴミ", "ごみ", "recycle", "リサイクル", "分別"],
+    "question": "How do I dispose of garbage?",
+    "answer": "Please separate your trash into burnable, non-burnable, and recyclables. There are bins in the hallway with labels. In Japan, proper waste separation is very important for environmental protection!",
+    "arActions": [
+      {"type": "PLAY_ANIMATION", "target": "zashiki", "params": {"name": "point_outside"}},
+      {"type": "SHOW_INFO_PANEL", "target": "garbage_rules"}
+    ]
+  }
+]

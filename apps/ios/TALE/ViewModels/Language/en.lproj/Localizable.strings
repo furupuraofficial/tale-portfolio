@@ -1,0 +1,12 @@
+"select_language_title" = "Please select your language";
+"select_language_subtitle" = "Choose a language";
+"tap_to_start" = "Tap to start";
+"restaurant_title" = "Recommended Restaurants";
+"support_prompt" = "Please enter your inquiry.";
+"support_subject_placeholder" = "Subject";
+"support_send_button" = "Send";
+"support_title" = "Contact Us";
+"support_close" = "Close";
+"support_mail_unavailable_title" = "Mail cannot be sent";
+"support_mail_unavailable_body" = "Mail is not configured. Copy the text and send manually.";
+"support_copy" = "Copy";

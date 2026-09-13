@@ -1,0 +1,18 @@
+services:
+  db:
+    container_name: tale_postgres
+    image: postgres:16
+    environment:
+      POSTGRES_USER: tale
+      POSTGRES_PASSWORD: tale
+      POSTGRES_DB: tale
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d/01-migrations
+      - ./seeds:/docker-entrypoint-initdb.d/02-seeds
+
+volumes:
+  pgdata:
+    name: tale_postgres_data

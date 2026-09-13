@@ -1,0 +1,12 @@
+"select_language_title" = "言語を選択してください";
+"select_language_subtitle" = "お好きな言語を選んでください";
+"tap_to_start" = "タップして開始";
+"restaurant_title" = "おすすめレストラン";
+"support_prompt" = "お問い合わせ内容を入力してください。";
+"support_subject_placeholder" = "件名";
+"support_send_button" = "運営に送信";
+"support_title" = "お問い合わせ";
+"support_close" = "閉じる";
+"support_mail_unavailable_title" = "メールが送信できません";
+"support_mail_unavailable_body" = "メール設定がされていないため送信できません。\nコピーして手動でメール送信してください。";
+"support_copy" = "コピー";

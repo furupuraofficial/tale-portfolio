@@ -1,0 +1,12 @@
+"select_language_title" = "Seleccione su idioma";
+"select_language_subtitle" = "Elija un idioma";
+"tap_to_start" = "Toque para empezar";
+"restaurant_title" = "Restaurantes recomendados";
+"support_prompt" = "Ingrese su consulta.";
+"support_subject_placeholder" = "Asunto";
+"support_send_button" = "Enviar";
+"support_title" = "Contacto";
+"support_close" = "Cerrar";
+"support_mail_unavailable_title" = "No se puede enviar el correo";
+"support_mail_unavailable_body" = "La aplicación de correo no está configurada. Copie el texto y envíelo manualmente.";
+"support_copy" = "Copiar";

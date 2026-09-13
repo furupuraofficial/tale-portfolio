@@ -1,0 +1,31 @@
+# Go build artifacts
+tale-backend
+tale-voice-chat
+voice-chat
+.cache/
+*.test
+*.out
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Runtime data
+conversation_history.json
+data/conversation_history.json
+
+# Environment variables (contains secrets)
+.env
+.env.local
+.env.*.local
+
+# OS/editor cruft
+.DS_Store
+*.swp
+
+# IDE user settings
+.idea/
+.vscode/
+**/xcuserdata/
+**/.swiftpm/xcode/xcuserdata/
