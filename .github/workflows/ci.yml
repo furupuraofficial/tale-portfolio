@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Go backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: services/api/go.mod
+          cache-dependency-path: services/api/go.sum
+      - name: Install PortAudio
+        run: sudo apt-get update && sudo apt-get install --yes portaudio19-dev
+      - name: Check formatting
+        run: test -z "$(gofmt -l .)"
+      - name: Run tests
+        run: go test ./...
+
+  admin-web:
+    name: Admin web
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/admin-web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/admin-web/package-lock.json
+      - run: npm ci
+      - run: npm test -- --watchAll=false
+        env:
+          CI: true
+      - run: npm run build

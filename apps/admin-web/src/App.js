@@ -301,7 +301,7 @@ function App() {
               </button>
             )}
           </div>
-          <form className="form" onSubmit={handleSave}>
+          <form className="form" aria-label="ルール編集フォーム" onSubmit={handleSave}>
             <label>
               <span>ルールID（編集可・未入力なら自動生成）</span>
               <input
