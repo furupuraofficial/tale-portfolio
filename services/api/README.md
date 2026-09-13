@@ -4,9 +4,9 @@ Go言語とAI APIを使用した音声会話システムです。マイクから
 
 ## 機能
 
-- **リアルタイム音声会話**: OpenAI Realtime API または Gemini 1.5 + TTS を使用
+- **リアルタイム音声会話**: OpenAI Realtime API または Gemini + TTS を使用
 - **音声認識**: OpenAI Whisper APIを使用して音声をテキストに変換
-- **AI会話**: GPT-4 / Gemini 1.5 を使用して自然な会話を生成
+- **AI会話**: OpenAI / Geminiを使用して自然な会話を生成
 - **音声合成**: OpenAI TTS APIを使用してテキストを音声に変換
 - **レッスンモード**: PostgreSQLに保存されたレッスンコンテンツの再生
 - **ARアクション**: iOS ARアプリへのアニメーション指示
@@ -39,7 +39,7 @@ APIプロバイダーや永続化方式が変わっても、レッスンの進�
 
 **Gemini + TTS モード:**
 ```
-マイク → VAD → Whisper（音声認識）→ Gemini 1.5（応答生成）→ TTS（音声合成）→ スピーカー/iOS
+マイク → VAD → Whisper（音声認識）→ Gemini（応答生成）→ TTS（音声合成）→ スピーカー/iOS
 ```
 
 ## 必要要件
@@ -149,7 +149,7 @@ services/api/
 │   │   └── recorder.go          # 音声録音
 │   ├── realtime/
 │   │   ├── client.go            # OpenAI Realtime API クライアント
-│   │   ├── gemini_client.go     # Gemini 1.5 + TTS クライアント
+│   │   ├── gemini_client.go     # Gemini + TTS クライアント
 │   │   └── state.go             # ステートマシン & スクリプト
 │   ├── lesson/
 │   │   ├── model.go             # レッスンのデータモデル
@@ -185,7 +185,7 @@ services/api/
 
 | API | モデル | 用途 |
 |-----|--------|------|
-| Generative AI | gemini-1.5-flash | テキスト会話 |
+| Generative AI | gemini-3.8-flash | テキスト会話（`GEMINI_MODEL`で変更可能） |
 
 モデルの提供状況や料金は変更されるため、実行前に[OpenAI公式のモデル一覧](https://developers.openai.com/api/docs/models)と各プロバイダーの公式情報を確認してください。
 

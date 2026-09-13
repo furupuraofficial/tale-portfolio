@@ -11,13 +11,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/generative-ai-go/genai"
 	"github.com/gordonklaus/portaudio"
 	openai "github.com/sashabaranov/go-openai"
-	"google.golang.org/api/option"
+	"google.golang.org/genai"
 )
 
 const (
+	DefaultGeminiModel = "gemini-3.8-flash"
+
 	// Gemini audio format (same as OpenAI for compatibility)
 	GeminiInputSampleRate  = 24000
 	GeminiOutputSampleRate = 24000
@@ -32,10 +33,10 @@ const (
 	MinSpeechDurationMs = 500  // Minimum speech duration to process
 )
 
-// GeminiClient handles voice chat using Gemini 1.5 + Whisper + TTS
+// GeminiClient handles voice chat using Gemini + Whisper + TTS.
 type GeminiClient struct {
 	geminiClient *genai.Client
-	chatSession  *genai.ChatSession
+	chatSession  *genai.Chat
 	ttsClient    *openai.Client
 	inputStream  *portaudio.Stream
 
@@ -85,7 +86,7 @@ type GeminiClient struct {
 	transcriptFlushTimer *time.Timer
 }
 
-// NewGeminiClient creates a new Gemini 1.5 + TTS client
+// NewGeminiClient creates a new Gemini + TTS client.
 func NewGeminiClient() (*GeminiClient, error) {
 	geminiKey := os.Getenv("GEMINI_API_KEY")
 	if geminiKey == "" {
@@ -98,7 +99,10 @@ func NewGeminiClient() (*GeminiClient, error) {
 	}
 
 	ctx := context.Background()
-	geminiClient, err := genai.NewClient(ctx, option.WithAPIKey(geminiKey))
+	geminiClient, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  geminiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Gemini client: %w", err)
 	}
@@ -125,23 +129,34 @@ func NewGeminiClient() (*GeminiClient, error) {
 
 // Connect initializes the Gemini chat session
 func (gc *GeminiClient) Connect() error {
-	model := gc.geminiClient.GenerativeModel("gemini-1.5-flash")
-
-	model.SystemInstruction = &genai.Content{
-		Parts: []genai.Part{
-			genai.Text(gc.getSystemPrompt()),
+	modelName := geminiModelName()
+	temperature := float32(0.7)
+	topP := float32(0.9)
+	config := &genai.GenerateContentConfig{
+		SystemInstruction: &genai.Content{
+			Parts: []*genai.Part{{Text: gc.getSystemPrompt()}},
 		},
+		Temperature:     &temperature,
+		TopP:            &topP,
+		MaxOutputTokens: 256,
 	}
 
-	// Configure generation settings
-	model.SetTemperature(0.7)
-	model.SetTopP(0.9)
-	model.SetMaxOutputTokens(256) // Keep responses short
+	chatSession, err := gc.geminiClient.Chats.Create(context.Background(), modelName, config, nil)
+	if err != nil {
+		return fmt.Errorf("create Gemini chat session: %w", err)
+	}
+	gc.chatSession = chatSession
 
-	gc.chatSession = model.StartChat()
-
-	log.Printf("[Gemini] Connected to Gemini 1.5 Flash")
+	log.Printf("[Gemini] Connected using model %s", modelName)
 	return nil
+}
+
+func geminiModelName() string {
+	model := strings.TrimSpace(os.Getenv("GEMINI_MODEL"))
+	if model == "" {
+		return DefaultGeminiModel
+	}
+	return model
 }
 
 func (gc *GeminiClient) getSystemPrompt() string {
@@ -254,20 +269,20 @@ func (gc *GeminiClient) getWhisperLanguage() string {
 func (gc *GeminiClient) getGeminiResponse(userMessage string) (string, error) {
 	ctx := context.Background()
 
-	resp, err := gc.chatSession.SendMessage(ctx, genai.Text(userMessage))
+	resp, err := gc.chatSession.SendMessage(ctx, genai.Part{Text: userMessage})
 	if err != nil {
 		return "", err
 	}
 
-	if len(resp.Candidates) == 0 || len(resp.Candidates[0].Content.Parts) == 0 {
+	if len(resp.Candidates) == 0 || resp.Candidates[0].Content == nil || len(resp.Candidates[0].Content.Parts) == 0 {
 		return "", fmt.Errorf("no response from Gemini")
 	}
 
 	// Extract text from response
 	var result strings.Builder
 	for _, part := range resp.Candidates[0].Content.Parts {
-		if text, ok := part.(genai.Text); ok {
-			result.WriteString(string(text))
+		if part != nil {
+			result.WriteString(part.Text)
 		}
 	}
 
@@ -430,10 +445,6 @@ func (gc *GeminiClient) Close() error {
 	if gc.inputStream != nil {
 		gc.inputStream.Stop()
 		gc.inputStream.Close()
-	}
-
-	if gc.geminiClient != nil {
-		gc.geminiClient.Close()
 	}
 
 	return nil
