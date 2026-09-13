@@ -93,7 +93,9 @@ open TALE.xcodeproj
 
 3. 必要に応じてTeamとBundle Identifierを設定
 
-4. ビルドして実行
+4. Xcode Schemeの環境変数 `TALE_BACKEND_URL` にBackendのURLを設定（未指定時は `http://127.0.0.1:8080`）
+
+5. ビルドして実行
 
 ## ビルド方法
 

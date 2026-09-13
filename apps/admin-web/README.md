@@ -17,7 +17,7 @@ npm ci
 npm start
 ```
 
-標準では `http://localhost:8080` のBackend APIへ接続します。接続先は `REACT_APP_API_BASE` で変更できます。
+開発時は空のままにするとReactのdev proxy経由で `http://localhost:8080` へ接続します。別オリジンへ接続する場合は `REACT_APP_API_BASE` を設定してください。
 
 ## コマンド
 

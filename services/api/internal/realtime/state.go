@@ -2,9 +2,13 @@ package realtime
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 )
 
 // Step represents the current conversation step
@@ -369,8 +373,16 @@ type Rule struct {
 	ARActions []ARAction `json:"arActions"`
 }
 
-// RuleDatabase holds all loaded rules
-var RuleDatabase []Rule
+var (
+	ErrRuleNotFound = errors.New("rule not found")
+	ErrRuleExists   = errors.New("rule already exists")
+)
+
+var (
+	ruleDatabaseMu sync.RWMutex
+	ruleDatabase   []Rule
+	rulesFilename  string
+)
 
 // LoadRules loads rules from rules.json file
 func LoadRules(filename string) error {
@@ -379,18 +391,182 @@ func LoadRules(filename string) error {
 		return fmt.Errorf("failed to read rules file: %w", err)
 	}
 
-	if err := json.Unmarshal(data, &RuleDatabase); err != nil {
+	var rules []Rule
+	if err := json.Unmarshal(data, &rules); err != nil {
 		return fmt.Errorf("failed to parse rules JSON: %w", err)
 	}
 
-	fmt.Printf("✓ Loaded %d rules from %s\n", len(RuleDatabase), filename)
+	ruleDatabaseMu.Lock()
+	ruleDatabase = cloneRules(rules)
+	rulesFilename = filename
+	ruleDatabaseMu.Unlock()
+
+	fmt.Printf("✓ Loaded %d rules from %s\n", len(rules), filename)
 	return nil
+}
+
+// ListRules returns a copy safe for callers to inspect or encode.
+func ListRules() []Rule {
+	ruleDatabaseMu.RLock()
+	defer ruleDatabaseMu.RUnlock()
+	return cloneRules(ruleDatabase)
+}
+
+func CreateRule(rule Rule) (Rule, error) {
+	ruleDatabaseMu.Lock()
+	defer ruleDatabaseMu.Unlock()
+
+	rule = normalizeRule(rule)
+	if rule.ID == "" {
+		rule.ID = fmt.Sprintf("rule-%d", time.Now().UnixNano())
+	}
+	if err := validateRule(rule); err != nil {
+		return Rule{}, err
+	}
+	if findRuleIndexLocked(rule.ID) >= 0 {
+		return Rule{}, fmt.Errorf("%w: %q", ErrRuleExists, rule.ID)
+	}
+
+	ruleDatabase = append(ruleDatabase, cloneRule(rule))
+	if err := saveRulesLocked(); err != nil {
+		ruleDatabase = ruleDatabase[:len(ruleDatabase)-1]
+		return Rule{}, err
+	}
+	return cloneRule(rule), nil
+}
+
+func UpdateRule(id string, rule Rule) (Rule, error) {
+	ruleDatabaseMu.Lock()
+	defer ruleDatabaseMu.Unlock()
+
+	idx := findRuleIndexLocked(id)
+	if idx < 0 {
+		return Rule{}, fmt.Errorf("%w: %q", ErrRuleNotFound, id)
+	}
+	rule.ID = id
+	rule = normalizeRule(rule)
+	if err := validateRule(rule); err != nil {
+		return Rule{}, err
+	}
+
+	previous := ruleDatabase[idx]
+	ruleDatabase[idx] = cloneRule(rule)
+	if err := saveRulesLocked(); err != nil {
+		ruleDatabase[idx] = previous
+		return Rule{}, err
+	}
+	return cloneRule(rule), nil
+}
+
+func DeleteRule(id string) error {
+	ruleDatabaseMu.Lock()
+	defer ruleDatabaseMu.Unlock()
+
+	idx := findRuleIndexLocked(id)
+	if idx < 0 {
+		return fmt.Errorf("%w: %q", ErrRuleNotFound, id)
+	}
+	previous := cloneRules(ruleDatabase)
+	ruleDatabase = append(ruleDatabase[:idx], ruleDatabase[idx+1:]...)
+	if err := saveRulesLocked(); err != nil {
+		ruleDatabase = previous
+		return err
+	}
+	return nil
+}
+
+func normalizeRule(rule Rule) Rule {
+	rule.ID = strings.TrimSpace(rule.ID)
+	rule.Question = strings.TrimSpace(rule.Question)
+	rule.Answer = strings.TrimSpace(rule.Answer)
+	keywords := make([]string, 0, len(rule.Keywords))
+	for _, keyword := range rule.Keywords {
+		if keyword = strings.TrimSpace(keyword); keyword != "" {
+			keywords = append(keywords, keyword)
+		}
+	}
+	rule.Keywords = keywords
+	return rule
+}
+
+func validateRule(rule Rule) error {
+	switch {
+	case rule.ID == "":
+		return fmt.Errorf("rule id is required")
+	case len(rule.Keywords) == 0:
+		return fmt.Errorf("at least one keyword is required")
+	case rule.Question == "":
+		return fmt.Errorf("question is required")
+	case rule.Answer == "":
+		return fmt.Errorf("answer is required")
+	default:
+		return nil
+	}
+}
+
+func findRuleIndexLocked(id string) int {
+	for i := range ruleDatabase {
+		if ruleDatabase[i].ID == id {
+			return i
+		}
+	}
+	return -1
+}
+
+func saveRulesLocked() error {
+	if rulesFilename == "" {
+		return fmt.Errorf("rules database has not been loaded")
+	}
+	data, err := json.MarshalIndent(ruleDatabase, "", "  ")
+	if err != nil {
+		return fmt.Errorf("encode rules: %w", err)
+	}
+	tmp, err := os.CreateTemp(filepath.Dir(rulesFilename), ".rules-*.json")
+	if err != nil {
+		return fmt.Errorf("create temporary rules file: %w", err)
+	}
+	tmpName := tmp.Name()
+	defer os.Remove(tmpName)
+	if _, err := tmp.Write(append(data, '\n')); err != nil {
+		tmp.Close()
+		return fmt.Errorf("write rules: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("close rules file: %w", err)
+	}
+	if err := os.Rename(tmpName, rulesFilename); err != nil {
+		return fmt.Errorf("replace rules file: %w", err)
+	}
+	return nil
+}
+
+func cloneRules(rules []Rule) []Rule {
+	cloned := make([]Rule, len(rules))
+	for i := range rules {
+		cloned[i] = cloneRule(rules[i])
+	}
+	return cloned
+}
+
+func cloneRule(rule Rule) Rule {
+	rule.Keywords = append([]string(nil), rule.Keywords...)
+	rule.ARActions = append([]ARAction(nil), rule.ARActions...)
+	for i := range rule.ARActions {
+		if rule.ARActions[i].Params != nil {
+			rule.ARActions[i].Params = make(map[string]string, len(rule.ARActions[i].Params))
+			for key, value := range rule.ARActions[i].Params {
+				rule.ARActions[i].Params[key] = value
+			}
+		}
+	}
+	return rule
 }
 
 // GenerateRulesPrompt creates a system prompt section from rules.json
 // This allows GPT to answer questions about inn rules without keyword matching
 func GenerateRulesPrompt() string {
-	if len(RuleDatabase) == 0 {
+	rules := ListRules()
+	if len(rules) == 0 {
 		return ""
 	}
 
@@ -398,7 +574,7 @@ func GenerateRulesPrompt() string {
 	sb.WriteString("【Inn Rules & Facilities Information】\n")
 	sb.WriteString("Use this information to answer guest questions. Respond naturally in the user's language.\n\n")
 
-	for _, rule := range RuleDatabase {
+	for _, rule := range rules {
 		sb.WriteString(fmt.Sprintf("## %s\n", rule.ID))
 		sb.WriteString(fmt.Sprintf("%s\n\n", rule.Answer))
 	}
@@ -411,8 +587,9 @@ func FindMatchingRule(userInput string) *Rule {
 	lower := strings.ToLower(userInput)
 
 	// Check each rule's keywords
-	for i := range RuleDatabase {
-		rule := &RuleDatabase[i]
+	rules := ListRules()
+	for i := range rules {
+		rule := &rules[i]
 		for _, keyword := range rule.Keywords {
 			if strings.Contains(lower, strings.ToLower(keyword)) {
 				return rule

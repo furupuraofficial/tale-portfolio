@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -19,11 +20,12 @@ import (
 )
 
 const (
-	RealtimeAPIURL   = "wss://api.openai.com/v1/realtime?model=gpt-realtime"
-	InputSampleRate  = 24000
-	OutputSampleRate = 24000
-	InputChannels    = 1
-	OutputChannels   = 1
+	RealtimeAPIBaseURL   = "wss://api.openai.com/v1/realtime"
+	DefaultRealtimeModel = "gpt-realtime-2.1"
+	InputSampleRate      = 24000
+	OutputSampleRate     = 24000
+	InputChannels        = 1
+	OutputChannels       = 1
 
 	// 24kHz × 200ms = 4,800 samples
 	RealtimeFrameSamples = 4800
@@ -93,6 +95,15 @@ type Client struct {
 type ConversationItem struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
+}
+
+func realtimeAPIURL() string {
+	model := strings.TrimSpace(os.Getenv("OPENAI_REALTIME_MODEL"))
+	if model == "" {
+		model = DefaultRealtimeModel
+	}
+	query := url.Values{"model": []string{model}}
+	return RealtimeAPIBaseURL + "?" + query.Encode()
 }
 
 // RealtimeEvent represents events sent to/from the Realtime API
@@ -327,7 +338,7 @@ func (rc *Client) Connect() error {
 		HandshakeTimeout: 10 * time.Second,
 	}
 
-	conn, _, err := dialer.Dial(RealtimeAPIURL, header)
+	conn, _, err := dialer.Dial(realtimeAPIURL(), header)
 	if err != nil {
 		return fmt.Errorf("failed to connect to Realtime API: %w", err)
 	}

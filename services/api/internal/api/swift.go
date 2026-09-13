@@ -30,7 +30,7 @@ func RegisterSwiftAPI(arServer *ar.Server, rc *realtime.Client) {
 
 	// Rules list (for UI/diagnostic)
 	http.HandleFunc("/conversation/rules", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, realtime.RuleDatabase)
+		writeJSON(w, http.StatusOK, realtime.ListRules())
 	})
 
 	// Live transcript of the current sentence being spoken (SSE)

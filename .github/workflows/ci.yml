@@ -46,3 +46,19 @@ jobs:
         env:
           CI: true
       - run: npm run build
+
+  ios:
+    name: iOS app
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build without code signing
+        working-directory: apps/ios
+        run: >-
+          xcodebuild
+          -project TALE.xcodeproj
+          -scheme TALE
+          -destination 'generic/platform=iOS'
+          -derivedDataPath "$RUNNER_TEMP/tale-derived-data"
+          CODE_SIGNING_ALLOWED=NO
+          build

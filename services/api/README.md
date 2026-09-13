@@ -174,7 +174,7 @@ services/api/
 
 | API | モデル | 用途 |
 |-----|--------|------|
-| Realtime API | gpt-realtime | リアルタイム音声会話（環境変数で変更可能） |
+| Realtime API | gpt-realtime-2.1 | リアルタイム音声会話（`OPENAI_REALTIME_MODEL`で変更可能） |
 | Whisper API | whisper-1 | 音声認識 |
 | TTS API | tts-1 | 音声合成 |
 | Chat API | gpt-4o-mini | レッスン翻訳 |

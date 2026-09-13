@@ -48,7 +48,7 @@ final class BackendClient: NSObject, ObservableObject {
     var pendingTranscript: (text: String, step: String?)?
     
     var audioStreamPlayer: AudioStreamPlayer? = AudioStreamPlayer()
-    let baseURL = URL(string: "http://192.168.3.7:8080")!
+    let baseURL = BackendClient.configuredBaseURL()
     var currentLessonId: String?
 
     private enum PendingARAction {
@@ -78,6 +78,23 @@ final class BackendClient: NSObject, ObservableObject {
         default:
             return "Move your phone around to find me"
         }
+    }
+
+    private static func configuredBaseURL() -> URL {
+        let candidates = [
+            ProcessInfo.processInfo.environment["TALE_BACKEND_URL"],
+            Bundle.main.object(forInfoDictionaryKey: "TALEBackendURL") as? String,
+            "http://127.0.0.1:8080"
+        ]
+
+        for case let value? in candidates {
+            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+            if let url = URL(string: trimmed), !trimmed.isEmpty {
+                return url
+            }
+        }
+
+        preconditionFailure("A valid TALE backend URL is required")
     }
     
     override init() {

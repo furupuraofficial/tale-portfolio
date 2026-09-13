@@ -56,6 +56,7 @@ func main() {
 
 	api.SetRealtimeClient(client)
 	api.RegisterSwiftAPI(arServer, client)
+	api.RegisterRuleAPI()
 
 	go func() {
 		if err := arServer.Start(8080); err != nil {
