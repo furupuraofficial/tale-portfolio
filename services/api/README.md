@@ -46,7 +46,7 @@ APIプロバイダーや永続化方式が変わっても、レッスンの進�
 
 ### システム要件
 
-- Go 1.21以上
+- Go 1.25以上（`go.mod`に準拠）
 - PortAudio ライブラリ
 - PostgreSQL (レッスン機能を使う場合)
 - マイクとスピーカー
@@ -73,21 +73,10 @@ go mod download
 
 ### 2. 環境変数の設定
 
-`.env` ファイルを作成:
+テンプレートから `.env` ファイルを作成し、利用するモードのAPIキーを設定します:
 
 ```bash
-# OpenAI API (必須)
-OPENAI_API_KEY=sk-your-openai-api-key
-
-# Gemini API (Geminiモードを使う場合)
-GEMINI_API_KEY=your-gemini-api-key
-
-# PostgreSQL (レッスン機能を使う場合)
-DATABASE_URL=postgres://tale:tale@localhost:5432/tale?sslmode=disable
-
-# デバッグ (オプション)
-DEBUG_REALTIME=true
-DEBUG_GEMINI=true
+cp .env.example .env
 ```
 
 ### 3. PostgreSQL起動 (オプション)
@@ -130,18 +119,21 @@ make db-psql      # SQL接続
 | `/ws` | WebSocket | リアルタイム音声/テキスト通信 |
 | `/health` | GET | ヘルスチェック |
 | `/conversation/start` | POST | 会話セッション開始 |
-| `/conversation/status` | GET | 現在の状態取得 |
+| `/conversation/state` | GET | 現在の状態取得 |
+| `/conversation/history` | GET | 会話履歴取得 |
+| `/conversation/transcript/stream` | GET (SSE) | テキストストリーミング |
+| `/conversation/audio/stream` | GET (SSE) | 音声ストリーミング |
 | `/lessons` | GET | レッスン一覧 |
 | `/lessons/:id` | GET | レッスン詳細 |
 | `/lessons/:id/start` | POST | レッスン開始 |
 | `/lessons/:id/next` | POST | 次のステップへ |
-| `/stream/audio` | GET (SSE) | 音声ストリーミング |
-| `/stream/transcript` | GET (SSE) | テキストストリーミング |
+| `/rule/items` | GET/POST | 会話ルールの一覧取得・作成 |
+| `/rule/items/:id` | PUT/DELETE | 会話ルールの更新・削除 |
 
 ## プロジェクト構造
 
 ```
-tale-backend/
+services/api/
 ├── cmd/
 │   ├── voice-chat/
 │   │   └── main.go              # OpenAI Realtime API モード
@@ -168,8 +160,8 @@ tale-backend/
 │   └── rules.json               # ルール定義
 ├── data/                         # ローカル実行時データ（Git管理対象外）
 ├── docs/
-│   ├── README.md                # このファイル
 │   └── STATE_MACHINE_README.md  # ステートマシンの詳細
+├── README.md                    # このファイル
 ├── Makefile
 ├── docker-compose.yml
 ├── go.mod
@@ -182,7 +174,7 @@ tale-backend/
 
 | API | モデル | 用途 |
 |-----|--------|------|
-| Realtime API | gpt-realtime | リアルタイム音声会話 |
+| Realtime API | gpt-realtime | リアルタイム音声会話（環境変数で変更可能） |
 | Whisper API | whisper-1 | 音声認識 |
 | TTS API | tts-1 | 音声合成 |
 | Chat API | gpt-4o-mini | レッスン翻訳 |
@@ -193,15 +185,7 @@ tale-backend/
 |-----|--------|------|
 | Generative AI | gemini-1.5-flash | テキスト会話 |
 
-### 料金目安
-
-| API | 料金 |
-|-----|------|
-| OpenAI Realtime (入力) | $0.06/分 |
-| OpenAI Realtime (出力) | $0.24/分 |
-| OpenAI TTS | $0.015/1K文字 |
-| OpenAI Whisper | $0.006/分 |
-| Gemini 1.5 Flash | $0.075/1M入力トークン |
+モデルの提供状況や料金は変更されるため、実行前に[OpenAI公式のモデル一覧](https://developers.openai.com/api/docs/models)と各プロバイダーの公式情報を確認してください。
 
 ## トラブルシューティング
 
@@ -235,7 +219,7 @@ WebSocket接続がタイムアウトで切断されました。長時間アイ�
 
 ## ライセンス
 
-MIT License
+[MIT License](../../LICENSE)。メディア資産には別条件が適用されます。
 
 ## 開発者向け情報
 

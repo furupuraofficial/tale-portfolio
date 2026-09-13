@@ -83,7 +83,7 @@ TALE/
 1. リポジトリをクローン:
 ```bash
 git clone <repository-url>
-cd tale-frontend
+cd tale/apps/ios
 ```
 
 2. Xcodeでプロジェクトを開く:
@@ -126,8 +126,4 @@ open TALE.xcodeproj
 
 ## ライセンス
 
-[ライセンス情報を追加してください]
-
-## 開発者
-
-[開発者情報を追加してください]
+ソースコードはリポジトリルートのMIT Licenseに従います。3Dモデル、画像、動画、音声素材はMIT Licenseの対象外です。詳細はルートの `ASSET_NOTICES.md` を参照してください。
