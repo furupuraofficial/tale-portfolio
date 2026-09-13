@@ -33,7 +33,7 @@ extension ContentView {
             queuePlayer.actionAtItemEnd = .none
             introPlayer = queuePlayer
         } else {
-            debugLog("⚠️ Window2.mp4 がバンドル内に見つかりません")
+            debugLog("⚠️ Opening movie was not found in the app bundle")
         }
     }
 

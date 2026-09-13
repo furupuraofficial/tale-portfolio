@@ -64,7 +64,7 @@ struct IzakayaARContainer: UIViewRepresentable {
         }
 
         // Lowpoly_Kimono_cat を同時に配置
-        if let cat = try? Entity.load(named: "mini_zashiki") {
+        if let cat = try? Entity.load(named: "Lowpoly_Kimono_cat") {
             let catAnchor = AnchorEntity(world: SIMD3<Float>(0, -0.5, -1))
             cat.name = "introCat"
             cat.scale = [0.5, 0.5, 0.5]

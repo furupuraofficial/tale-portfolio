@@ -97,7 +97,7 @@ struct ContentView: View {
         }
         .onChange(of: showSakuraQuestion) { isShown in
             if isShown {
-                audioManager.playBGM(named: "quest")
+                audioManager.playBGM(named: "Quest_bgm")
             } else {
                 audioManager.startBGM()
             }

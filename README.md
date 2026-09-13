@@ -98,6 +98,10 @@ cd apps/admin-web && npm run lint && npm test && npm run build
 
 制約を隠さず記載し、改善内容はIssueと小さなブランチ単位で管理します。
 
+## コントリビューションとセキュリティ
+
+開発手順と素材追加時のルールは[CONTRIBUTING.md](CONTRIBUTING.md)、脆弱性の報告方法は[SECURITY.md](SECURITY.md)を参照してください。
+
 ## ライセンス
 
 ソースコードは[MIT License](LICENSE)で公開します。3Dモデル、画像、音声などのメディア資産はMIT Licenseの対象外です。詳細は[ASSET_NOTICES.md](ASSET_NOTICES.md)を参照してください。
