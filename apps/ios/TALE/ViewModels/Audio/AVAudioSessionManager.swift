@@ -8,10 +8,10 @@ enum AppAudioSession {
         do {
             try session.setCategory(.playAndRecord,
                                     mode: .voiceChat,
-                                    options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP, .mixWithOthers])
+                                    options: [.defaultToSpeaker, .allowBluetoothHFP, .allowBluetoothA2DP, .mixWithOthers])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
-            print("🔊 AVAudioSession setup failed:", error)
+            debugLog("🔊 AVAudioSession setup failed:", error)
         }
     }
 }

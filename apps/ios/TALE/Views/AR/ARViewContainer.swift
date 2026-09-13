@@ -33,7 +33,7 @@ struct ARViewContainer: UIViewRepresentable {
             // モデルを1回だけロード（アプリバンドル内のUSDZ）
             guard let modelURL = Bundle.main.url(forResource: "Lowpoly_Kimono_cat", withExtension: "usdz"),
                   let model = try? Entity.load(contentsOf: modelURL) else {
-                print("⚠️ Lowpoly_Kimono_cat load failed (bundle URL missing or load error)")
+                debugLog("⚠️ Lowpoly_Kimono_cat load failed (bundle URL missing or load error)")
                 return
             }
             model.scale = SIMD3<Float>(repeating: 0.5) // 小さければ 0.2〜2.0で調整
@@ -56,7 +56,7 @@ struct ARViewContainer: UIViewRepresentable {
             startFloating(on: arView)
 
             placed = true
-            print("✅ Lowpoly_Kimono_cat placed on plane (floating)")
+            debugLog("✅ Lowpoly_Kimono_cat placed on plane (floating)")
 
             // ARアクション用に登録
             controller.zashikiEntity = container
@@ -99,7 +99,7 @@ struct ARViewContainer: UIViewRepresentable {
         config.planeDetection = [.horizontal, .vertical] // 置くのは水平のみ拾ってるのでOK
         arView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
         
-        print("🟢 makeUIView ARView:", ObjectIdentifier(arView))
+        debugLog("🟢 makeUIView ARView:", ObjectIdentifier(arView))
 
         return arView
     }

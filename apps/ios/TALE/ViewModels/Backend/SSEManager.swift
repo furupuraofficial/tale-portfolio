@@ -8,10 +8,10 @@ extension BackendClient {
 
     func startHistoryStream() {
         transcriptSSEStartCount += 1
-        print("📡 startHistoryStream called (\(transcriptSSEStartCount))")
+        debugLog("📡 startHistoryStream called (\(transcriptSSEStartCount))")
         // 既に接続済みなら何もしない（多重接続防止）
         if historyTask != nil {
-            print("📡 startHistoryStream skipped (already connected)")
+            debugLog("📡 startHistoryStream skipped (already connected)")
             return
         }
 
@@ -23,15 +23,12 @@ extension BackendClient {
         request.timeoutInterval = .infinity
 
         historyBuffer.removeAll()
-        print("🔌 connect transcript SSE:", streamURL.absoluteString)
+        debugLog("🔌 connect transcript SSE:", streamURL.absoluteString)
         historyTask = session.dataTask(with: request)
         historyTask?.resume()
     }
 
     func handleHistoryEvent(_ data: Data) {
-            let responseString = String(data: data, encoding: .utf8)
-            print("📦 受信データ: \(responseString ?? "nil")")
-
             guard let content = String(data: data, encoding: .utf8) else { return }
 
             guard let line = content
@@ -55,9 +52,9 @@ extension BackendClient {
                 decoder.keyDecodingStrategy = .convertFromSnakeCase
                 let payload = try decoder.decode(TranscriptPayload.self, from: jsonData)
 
-                print("📡 SSE transcript event - step: \(payload.step ?? "nil"), arActions: \(payload.arActions?.count ?? 0)")
+                debugLog("📡 SSE transcript event - step: \(payload.step ?? "nil"), arActions: \(payload.arActions?.count ?? 0)")
                 if let arActions = payload.arActions, !arActions.isEmpty {
-                    print("📡 SSE transcript received ARActions: \(arActions)")
+                    debugLog("📡 SSE transcript received ARActions: \(arActions)")
                 }
 
                 DispatchQueue.main.async {
@@ -83,7 +80,7 @@ extension BackendClient {
                 // 履歴SSEでもARActionが来る場合は処理
                 self.handleARActions(payload.arActions)
             } catch {
-                print("transcript SSE decode error:", error)
+                debugLog("transcript SSE decode error:", error)
             }
         }
 
@@ -98,10 +95,10 @@ extension BackendClient {
 
     func startAudioStream() {
         audioSSEStartCount += 1
-        print("📡 startAudioStream called (\(audioSSEStartCount))")
+        debugLog("📡 startAudioStream called (\(audioSSEStartCount))")
         // 既に接続済みなら何もしない（多重接続防止）
         if audioTask != nil {
-            print("📡 startAudioStream skipped (already connected)")
+            debugLog("📡 startAudioStream skipped (already connected)")
             return
         }
 
@@ -113,7 +110,7 @@ extension BackendClient {
         request.timeoutInterval = .infinity
 
         audioBuffer.removeAll()
-        print("🔌 connect audio SSE:", streamURL.absoluteString)
+        debugLog("🔌 connect audio SSE:", streamURL.absoluteString)
         audioTask = session.dataTask(with: request)
         audioTask?.resume()
     }
@@ -149,10 +146,10 @@ extension BackendClient {
 
                 let isFinal = payload.audioDone == true
                 let payloadStep = payload.step
-                print("🔊 SSE audio event step=\(payloadStep ?? "nil") final=\(isFinal) arActions=\(payload.arActions?.count ?? 0)")
+                debugLog("🔊 SSE audio event step=\(payloadStep ?? "nil") final=\(isFinal) arActions=\(payload.arActions?.count ?? 0)")
 
                 if let arActions = payload.arActions, !arActions.isEmpty {
-                    print("🔊 SSE received ARActions: \(arActions)")
+                    debugLog("🔊 SSE received ARActions: \(arActions)")
                 }
 
                 // SSEから受信したARActionを処理（音声方式に関係なく適用）
@@ -169,7 +166,7 @@ extension BackendClient {
 
                 // 🔴 累積せず「来たチャンクをそのままキューへ」
                 if let base64 = payload.audioChunk, !base64.isEmpty {
-                    print("🔊 SSE enqueue audio step=\(payloadStep ?? "nil") final=\(isFinal)")
+                    debugLog("🔊 SSE enqueue audio step=\(payloadStep ?? "nil") final=\(isFinal)")
                     audioStreamPlayer?.enqueuePCM(
                         base64: base64,
                         isFinalChunk: isFinal,
@@ -180,7 +177,7 @@ extension BackendClient {
                         }
                     )
                 } else if isFinal {
-                    print("🔊 Received audioDone=true (no audio data)")
+                    debugLog("🔊 Received audioDone=true (no audio data)")
                     // 音声なしで end だけ来た場合もステップ進行をトリガー
                     handleAudioPlaybackFinished(
                         step: payloadStep
@@ -188,7 +185,7 @@ extension BackendClient {
                 }
 
             } catch {
-                print("audio SSE decode error:", error)
+                debugLog("audio SSE decode error:", error)
             }
         }
 

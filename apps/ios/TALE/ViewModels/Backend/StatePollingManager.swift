@@ -17,7 +17,7 @@ extension BackendClient {
 
         session.dataTask(with: url) { data, _, error in
             if let error = error {
-                print("state error:", error)
+                debugLog("state error:", error)
                 return
             }
             guard let data = data else { return }
@@ -33,7 +33,7 @@ extension BackendClient {
                     self.currentMode = state.mode
                 }
             } catch {
-                print("state decode error:", error)
+                debugLog("state decode error:", error)
             }
         }.resume()
     }

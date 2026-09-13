@@ -26,12 +26,12 @@ extension BackendClient {
         
         session.dataTask(with: request) { _, response, error in
             if let error = error {
-                print("conversation/start error:", error)
+                debugLog("conversation/start error:", error)
                 self.retryStartConversation()
                 return
             }
             if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
-                print("conversation/start failed:", http.statusCode)
+                debugLog("conversation/start failed:", http.statusCode)
                 self.retryStartConversation()
             }
         }.resume()
@@ -48,16 +48,12 @@ extension BackendClient {
         
         session.dataTask(with: request) { data, response, error in
             if let error = error {
-                print("setLanguage error:", error)
+                debugLog("setLanguage error:", error)
                 return
             }
             if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
-                print("setLanguage failed with status:", http.statusCode)
+                debugLog("setLanguage failed with status:", http.statusCode)
                 return
-            }
-            if let data {
-                let responseString = String(data: data, encoding: .utf8)
-                print("📦 /conversation/language response:", responseString ?? "nil")
             }
             if let data,
                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],

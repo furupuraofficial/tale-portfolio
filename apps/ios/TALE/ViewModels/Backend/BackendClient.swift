@@ -39,7 +39,7 @@ final class BackendClient: NSObject, ObservableObject {
     var shouldReconnectWebSocket = true
     weak var arManager: ARActionManaging? {
         didSet {
-            print("🎬 arManager didSet - new value: \(arManager != nil ? "not nil" : "nil")")
+            debugLog("🎬 arManager didSet - new value: \(arManager != nil ? "not nil" : "nil")")
             flushPendingARActionsIfPossible()
         }
     }
@@ -48,7 +48,7 @@ final class BackendClient: NSObject, ObservableObject {
     var pendingTranscript: (text: String, step: String?)?
     
     var audioStreamPlayer: AudioStreamPlayer? = AudioStreamPlayer()
-    let baseURL = BackendClient.configuredBaseURL()
+    let baseURL = BackendConfiguration.resolve()
     var currentLessonId: String?
 
     private enum PendingARAction {
@@ -80,23 +80,6 @@ final class BackendClient: NSObject, ObservableObject {
         }
     }
 
-    private static func configuredBaseURL() -> URL {
-        let candidates = [
-            ProcessInfo.processInfo.environment["TALE_BACKEND_URL"],
-            Bundle.main.object(forInfoDictionaryKey: "TALEBackendURL") as? String,
-            "http://127.0.0.1:8080"
-        ]
-
-        for case let value? in candidates {
-            let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-            if let url = URL(string: trimmed), !trimmed.isEmpty {
-                return url
-            }
-        }
-
-        preconditionFailure("A valid TALE backend URL is required")
-    }
-    
     override init() {
         super.init()
         
@@ -114,39 +97,39 @@ final class BackendClient: NSObject, ObservableObject {
     }
 
     func handleARActions(_ actions: [ARAction]?) {
-        print("🎬 handleARActions called, actions count:", actions?.count ?? 0)
+        debugLog("🎬 handleARActions called, actions count:", actions?.count ?? 0)
         guard let actions, !actions.isEmpty else {
-            print("🎬 handleARActions: no actions to process")
+            debugLog("🎬 handleARActions: no actions to process")
             return
         }
-        print("🎬 handleARActions: processing \(actions.count) actions")
+        debugLog("🎬 handleARActions: processing \(actions.count) actions")
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             for action in actions {
-                print("🎬 Processing action - type: \(action.type ?? "nil"), target: \(action.target ?? "nil"), params: \(action.params ?? [:])")
+                debugLog("🎬 Processing action - type: \(action.type ?? "nil"), target: \(action.target ?? "nil"), params: \(action.params ?? [:])")
                 guard let type = action.type else {
-                    print("🎬 Skipping action with nil type")
+                    debugLog("🎬 Skipping action with nil type")
                     continue
                 }
                 switch type {
                 case "PLAY_ANIMATION":
                     if let name = action.params?["name"] {
-                        print("🎬 Enqueuing PLAY_ANIMATION: \(name)")
+                        debugLog("🎬 Enqueuing PLAY_ANIMATION: \(name)")
                         self.enqueueOrPerform(.playAnimation(name))
                     } else {
-                        print("🎬 PLAY_ANIMATION has no 'name' param")
+                        debugLog("🎬 PLAY_ANIMATION has no 'name' param")
                     }
                 case "SHOW_SPEECH_BUBBLE":
-                    print("🎬 Enqueuing SHOW_SPEECH_BUBBLE")
+                    debugLog("🎬 Enqueuing SHOW_SPEECH_BUBBLE")
                     self.enqueueOrPerform(.showSpeechBubble)
                 case "HIDE_SPEECH_BUBBLE":
-                    print("🎬 Enqueuing HIDE_SPEECH_BUBBLE")
+                    debugLog("🎬 Enqueuing HIDE_SPEECH_BUBBLE")
                     self.enqueueOrPerform(.hideSpeechBubble)
                 case "IDLE":
-                    print("🎬 Enqueuing IDLE")
+                    debugLog("🎬 Enqueuing IDLE")
                     self.enqueueOrPerform(.idle)
                 default:
-                    print("🎬 Unknown AR action type:", type)
+                    debugLog("🎬 Unknown AR action type:", type)
                 }
             }
         }
@@ -154,10 +137,10 @@ final class BackendClient: NSObject, ObservableObject {
 
     private func enqueueOrPerform(_ action: PendingARAction) {
         if let manager = arManager {
-            print("🎬 arManager available, performing action immediately")
+            debugLog("🎬 arManager available, performing action immediately")
             perform(action, with: manager)
         } else {
-            print("🎬 arManager is nil, adding to pendingARActions (count: \(pendingARActions.count + 1))")
+            debugLog("🎬 arManager is nil, adding to pendingARActions (count: \(pendingARActions.count + 1))")
             pendingARActions.append(action)
         }
     }
@@ -169,14 +152,14 @@ final class BackendClient: NSObject, ObservableObject {
     private func flushPendingARActionsIfPossible() {
         guard let manager = arManager, !pendingARActions.isEmpty else {
             if arManager == nil {
-                print("🎬 flushPending: arManager is nil")
+                debugLog("🎬 flushPending: arManager is nil")
             }
             if pendingARActions.isEmpty {
-                print("🎬 flushPending: no pending actions")
+                debugLog("🎬 flushPending: no pending actions")
             }
             return
         }
-        print("🎬 Flushing \(pendingARActions.count) pending AR actions")
+        debugLog("🎬 Flushing \(pendingARActions.count) pending AR actions")
         let actions = pendingARActions
         pendingARActions.removeAll()
         for action in actions {
@@ -185,19 +168,19 @@ final class BackendClient: NSObject, ObservableObject {
     }
 
     private func perform(_ action: PendingARAction, with manager: ARActionManaging) {
-        print("🎬 perform() called with action")
+        debugLog("🎬 perform() called with action")
         switch action {
         case .playAnimation(let name):
-            print("🎬 Calling manager.playAnimation(\(name))")
+            debugLog("🎬 Calling manager.playAnimation(\(name))")
             manager.playAnimation(named: name)
         case .showSpeechBubble:
-            print("🎬 Calling manager.showSpeechBubble()")
+            debugLog("🎬 Calling manager.showSpeechBubble()")
             manager.showSpeechBubble()
         case .hideSpeechBubble:
-            print("🎬 Calling manager.hideSpeechBubble()")
+            debugLog("🎬 Calling manager.hideSpeechBubble()")
             manager.hideSpeechBubble()
         case .idle:
-            print("🎬 Calling manager.setIdle()")
+            debugLog("🎬 Calling manager.setIdle()")
             manager.setIdle()
         }
     }
@@ -250,7 +233,7 @@ final class BackendClient: NSObject, ObservableObject {
             // ✅ Lesson中なら次へ
             //if self.isLessonContext(step: step) {
               //  guard let lessonId = self.currentLessonId else {
-                //    print("lesson id not found. currentLessonId=nil, step:", step ?? "nil")
+                //    debugLog("lesson id not found. currentLessonId=nil, step:", step ?? "nil")
                   //  return
                 //}
                // self.nextLessonStep(lessonId: lessonId)
@@ -311,15 +294,12 @@ final class BackendClient: NSObject, ObservableObject {
         
         session.dataTask(with: request) { data, response, error in
             if let error = error {
-                print("lesson start error:", error)
+                debugLog("lesson start error:", error)
                 return
             }
             if let http = response as? HTTPURLResponse,
                !(200..<300).contains(http.statusCode) {
-                print("lesson start failed status:", http.statusCode)
-                if let data, let body = String(data: data, encoding: .utf8) {
-                    print("lesson start error body:", body)
-                }
+                debugLog("lesson start failed status:", http.statusCode)
                 return
             }
             if let data {
@@ -335,15 +315,12 @@ final class BackendClient: NSObject, ObservableObject {
         
         session.dataTask(with: request) { data, response, error in
             if let error = error {
-                print("lesson next error:", error)
+                debugLog("lesson next error:", error)
                 return
             }
             if let http = response as? HTTPURLResponse,
                !(200..<300).contains(http.statusCode) {
-                print("lesson next failed status:", http.statusCode)
-                if let data, let body = String(data: data, encoding: .utf8) {
-                    print("lesson next error body:", body)
-                }
+                debugLog("lesson next failed status:", http.statusCode)
                 return
             }
             if let data {
@@ -357,15 +334,12 @@ final class BackendClient: NSObject, ObservableObject {
         
         session.dataTask(with: url) { data, response, error in
             if let error = error {
-                print("lesson current error:", error)
+                debugLog("lesson current error:", error)
                 return
             }
             if let http = response as? HTTPURLResponse,
                !(200..<300).contains(http.statusCode) {
-                print("lesson current failed status:", http.statusCode)
-                if let data, let body = String(data: data, encoding: .utf8) {
-                    print("lesson current error body:", body)
-                }
+                debugLog("lesson current failed status:", http.statusCode)
                 return
             }
             if let data {
@@ -403,14 +377,10 @@ final class BackendClient: NSObject, ObservableObject {
                     self.currentLessonStepId = res.step?.stepId
                 }
 
-                print("📍 Lesson step updated: \(self.currentLessonStepId ?? "nil")")
+                debugLog("📍 Lesson step updated: \(self.currentLessonStepId ?? "nil")")
             }
         } catch {
-            if let raw = String(data: data, encoding: .utf8) {
-                print("lesson response decode error:", error, "raw:", raw)
-            } else {
-                print("lesson response decode error:", error)
-            }
+            debugLog("lesson response decode error:", error, "context:", context)
         }
     }
 }

@@ -15,7 +15,7 @@ extension ContentView {
             )
             menuButton(
                 systemName: "gearshape",
-                action: { print("⚙️ settings tapped") }
+                action: { debugLog("⚙️ settings tapped") }
             )
             menuButton(
                 systemName: UIImage(systemName: "crossed.swords") != nil
@@ -55,7 +55,7 @@ extension ContentView {
                     .font(.system(size: 30, weight: .bold))
                     .foregroundColor(.black)
 
-                Button(action: { print("Language tapped") }) {
+                Button(action: { debugLog("Language tapped") }) {
                     Text("Language")
                         .font(.subheadline)
                         .padding(.horizontal, 12)

@@ -33,10 +33,10 @@ final class AudioStreamPlayer {
         // ★ 2ch フォーマットで明示接続
         engine.connect(player, to: engine.mainMixerNode, format: playbackFormat)
 
-        print("🔊 AudioSession sampleRate:", AVAudioSession.sharedInstance().sampleRate)
+        debugLog("🔊 AudioSession sampleRate:", AVAudioSession.sharedInstance().sampleRate)
         let mixerFormat = engine.mainMixerNode.outputFormat(forBus: 0)
-        print("🔊 mixerFormat:", mixerFormat.sampleRate, "Hz,", mixerFormat.channelCount, "ch")
-        print("🔊 playbackFormat:", playbackFormat.sampleRate, "Hz,", playbackFormat.channelCount, "ch")
+        debugLog("🔊 mixerFormat:", mixerFormat.sampleRate, "Hz,", mixerFormat.channelCount, "ch")
+        debugLog("🔊 playbackFormat:", playbackFormat.sampleRate, "Hz,", playbackFormat.channelCount, "ch")
     }
 
     private func startEngineIfNeeded() {
@@ -44,7 +44,7 @@ final class AudioStreamPlayer {
             do {
                 try engine.start()
             } catch {
-                print("engine start error:", error)
+                debugLog("engine start error:", error)
             }
         }
         if !player.isPlaying {
@@ -114,7 +114,7 @@ final class AudioStreamPlayer {
             }
         }
 
-        print("🎙 enqueuePCMData bytes:", data.count)
+        debugLog("🎙 enqueuePCMData bytes:", data.count)
 
         // 「このセリフの最初のチャンクかどうか」をここで判定
         let isFirstChunkOfUtterance = !isSpeaking

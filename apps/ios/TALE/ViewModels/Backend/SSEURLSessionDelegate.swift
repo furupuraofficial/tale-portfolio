@@ -31,7 +31,7 @@ extension BackendClient: URLSessionDataDelegate {
                     didReceive response: URLResponse,
                     completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         if let http = response as? HTTPURLResponse {
-            print("🔎 SSE response status:", http.statusCode,
+            debugLog("🔎 SSE response status:", http.statusCode,
                   "url:", http.url?.absoluteString ?? "-")
         }
         completionHandler(.allow)
@@ -43,7 +43,7 @@ extension BackendClient: URLSessionDataDelegate {
         if task === historyTask {
             historyTask = nil
             if let err = error as? URLError, err.code == .cancelled {
-                print("historyTask cancelled, not restarting SSE")
+                debugLog("historyTask cancelled, not restarting SSE")
                 return
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
@@ -52,7 +52,7 @@ extension BackendClient: URLSessionDataDelegate {
         } else if task === audioTask {
             audioTask = nil
             if let err = error as? URLError, err.code == .cancelled {
-                print("audioTask cancelled, not restarting SSE")
+                debugLog("audioTask cancelled, not restarting SSE")
                 return
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {

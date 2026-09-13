@@ -73,12 +73,12 @@ struct ContentView: View {
             audioManager.configurePlaybackSession()
             audioManager.startBGM()
             setupIntroPlayerIfNeeded()
-            print("🎬 ContentView.onAppear: Setting arManager to arSceneController")
+            debugLog("🎬 ContentView.onAppear: Setting arManager to arSceneController")
             backend.arManager = arSceneController
             arSceneController.onZashikiReady = {
                 backend.flushPendingARActions()
             }
-            print("🎬 ContentView.onAppear: arManager set, backend should flush pending actions")
+            debugLog("🎬 ContentView.onAppear: arManager set, backend should flush pending actions")
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 withAnimation(.easeOut(duration: 0.4)) {
                     showLaunchOverlay = false
@@ -126,11 +126,11 @@ struct ContentView: View {
             }
         }
         .onChange(of: backend.currentLessonStepId) { stepId in
-            print("📍 stepId changed to:", stepId ?? "nil")
+            debugLog("📍 stepId changed to:", stepId ?? "nil")
             let trimmed = stepId?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased() ?? ""
-            print("📍 trimmed value:", trimmed)
+            debugLog("📍 trimmed value:", trimmed)
             if trimmed == "COMPLETE" || trimmed.hasSuffix("_COMPLETE") {
-                print("✅ completion detected:", trimmed)
+                debugLog("✅ completion detected:", trimmed)
                 withAnimation {
                     showLessonScene = true
                     showLessonCompletePopup = true

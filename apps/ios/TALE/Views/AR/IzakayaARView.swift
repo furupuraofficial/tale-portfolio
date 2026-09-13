@@ -92,11 +92,11 @@ struct IzakayaARContainer: UIViewRepresentable {
                 arView.scene.addAnchor(lightAnchor)
             }
         } else {
-            print("⚠️ Lowpoly_Kimono_cat.usdz が見つかりませんでした")
+            debugLog("⚠️ Lowpoly_Kimono_cat.usdz が見つかりませんでした")
         }
 
         if !loaded {
-            print("⚠️ Izakayaモデルが見つかりませんでした")
+            debugLog("⚠️ Izakayaモデルが見つかりませんでした")
         }
 
         return arView

@@ -33,7 +33,7 @@ extension ContentView {
             queuePlayer.actionAtItemEnd = .none
             introPlayer = queuePlayer
         } else {
-            print("⚠️ Window2.mp4 がバンドル内に見つかりません")
+            debugLog("⚠️ Window2.mp4 がバンドル内に見つかりません")
         }
     }
 
@@ -94,8 +94,8 @@ extension ContentView {
     }
 
     func startLessonPlayback() {
-        guard let id = backend.currentLessonId else {
-            print("⚠️ Lesson ID is missing; cannot start lesson.")
+        guard backend.currentLessonId != nil else {
+            debugLog("⚠️ Lesson ID is missing; cannot start lesson.")
             return
         }
         showLessonCompletePopup = false

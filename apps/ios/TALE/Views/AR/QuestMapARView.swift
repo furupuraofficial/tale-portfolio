@@ -138,7 +138,7 @@ struct SolidBackgroundARView: UIViewRepresentable {
         // --------------------------------------------------
         // 5. Proximity Check
         // --------------------------------------------------
-        if let walkMen = controller.walkManEntity,
+        if controller.walkManEntity != nil,
            let mapContainer = controller.questMap,
            let sakura = mapContainer.findEntity(named: "sakura") {
 
@@ -188,7 +188,7 @@ struct SolidBackgroundARView: UIViewRepresentable {
         }
 
         @objc func handleTap(_ sender: UITapGestureRecognizer) {
-            print("👆 ARView tapped")
+            debugLog("👆 ARView tapped")
         }
     }
 

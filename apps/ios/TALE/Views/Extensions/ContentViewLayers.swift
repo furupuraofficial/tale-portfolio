@@ -67,7 +67,7 @@ extension ContentView {
 
                         VStack(spacing: 16) {
                             Button(action: {
-                                print("Start button tapped")
+                                debugLog("Start button tapped")
                                 withAnimation {
                                     arSceneController.showSakuraPopup = false
                                 }
@@ -234,8 +234,8 @@ Q. その時間帯は？
                         onStart: { startConversationNow() },
                         onPause: { pauseConversationUI() },
                         onResume: { resumeConversationUI() },
-                        onPrev: { print("◀️ left tapped") },
-                        onNext: { print("▶️ right tapped") }
+                        onPrev: { debugLog("◀️ left tapped") },
+                        onNext: { debugLog("▶️ right tapped") }
                     )
                     .padding(.bottom, 40)
                 }
@@ -312,7 +312,7 @@ Q. その時間帯は？
                     onNextStep: {
                         guard let id = backend.currentLessonId?.trimmingCharacters(in: .whitespacesAndNewlines),
                               !id.isEmpty else {
-                            print("⚠️ Lesson ID is missing; cannot go to next step.")
+                            debugLog("⚠️ Lesson ID is missing; cannot go to next step.")
                             return
                         }
                         backend.nextLessonStep(lessonId: paddedLessonId(id))

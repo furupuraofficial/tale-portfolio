@@ -17,15 +17,15 @@ struct FireworkBackground: UIViewRepresentable {
             model.scale = [0.005, 0.005, 0.005]
             anchor.addChild(model)
             if model.availableAnimations.isEmpty {
-                print("⚠️ Firework has no animations")
+                debugLog("⚠️ Firework has no animations")
             } else {
-                print("✅ Firework animations:", model.availableAnimations.count)
+                debugLog("✅ Firework animations:", model.availableAnimations.count)
                 model.availableAnimations.forEach {
                     model.playAnimation($0.repeat(), transitionDuration: 0.0, startsPaused: false)
                 }
             }
         } else {
-            print("⚠️ Firework.usdz not found")
+            debugLog("⚠️ Firework.usdz not found")
         }
 
         let camera = PerspectiveCamera()

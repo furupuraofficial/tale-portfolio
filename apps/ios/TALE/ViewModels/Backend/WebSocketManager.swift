@@ -11,7 +11,7 @@ extension BackendClient {
         components?.path = "/ws"
         guard let wsURL = components?.url else { return }
 
-        print("🔌 connect websocket:", wsURL.absoluteString)
+        debugLog("🔌 connect websocket:", wsURL.absoluteString)
         let task = session.webSocketTask(with: wsURL)
         webSocketTask = task
         shouldReconnectWebSocket = true
@@ -25,7 +25,7 @@ extension BackendClient {
 
             switch result {
             case .failure(let error):
-                print("❌ websocket receive error:", error)
+                debugLog("❌ websocket receive error:", error)
                 self.reconnectWebSocket()
             case .success(let message):
                 self.handleWebSocketMessage(message)
@@ -47,11 +47,10 @@ extension BackendClient {
         }
 
         guard let raw = text else {
-            print("⚠️ websocket message not utf8")
+            debugLog("⚠️ websocket message not utf8")
             return
         }
 
-        print("🧭 ws raw:", raw)
         guard let jsonData = raw.data(using: .utf8) else { return }
 
         do {
@@ -61,12 +60,12 @@ extension BackendClient {
             let type = payload.type ?? ""
 
             // WSでもARActionが来る場合は処理
-            print("🔌 WS payload received - type: \(type), arActions: \(payload.arActions?.count ?? 0)")
+            debugLog("🔌 WS payload received - type: \(type), arActions: \(payload.arActions?.count ?? 0)")
             self.handleARActions(payload.arActions)
 
             // 台本TTS/SSEで扱うステップでは、WS側のtext/audioは無視する（言語混在・二重再生防止）
             if shouldUseSSEAudio(step: payload.step) {
-                print("🔇 ignore WS payload during SSE step type=\(type) step=\(payload.step ?? "nil")")
+                debugLog("🔇 ignore WS payload during SSE step type=\(type) step=\(payload.step ?? "nil")")
                 return
             }
 
@@ -82,7 +81,7 @@ extension BackendClient {
                 handleFallbackPayload(payload)
             }
         } catch {
-            print("websocket decode error:", error)
+            debugLog("websocket decode error:", error)
         }
     }
 
@@ -94,7 +93,7 @@ extension BackendClient {
 
         // ✅ Lesson中は常にSSE/TTSで再生する想定なので、WS音声は無視する
         if isLessonActive {
-            print("🔇 ignore WS audio during lesson (step=\(payloadStep ?? "nil"))")
+            debugLog("🔇 ignore WS audio during lesson (step=\(payloadStep ?? "nil"))")
             return
         }
 
@@ -141,7 +140,7 @@ extension BackendClient {
         // （AudioStreamPlayer.onPlaybackStart を使う場合は、そちらから呼んでもOK）
         flushPendingTranscript(forStep: payloadStep)
 
-        print("🔊 WS enqueue audio step=\(payloadStep ?? "nil") final=\(isFinal)")
+        debugLog("🔊 WS enqueue audio step=\(payloadStep ?? "nil") final=\(isFinal)")
         audioStreamPlayer?.enqueuePCM(
             base64: base64,
             isFinalChunk: isFinal,
@@ -194,7 +193,7 @@ extension BackendClient {
     /// type 不明 or 空の場合のフォールバック処理
     private func handleFallbackPayload(_ payload: WSPayload) {
         guard let t = payload.text, !t.isEmpty else {
-            print("ℹ️ ws unknown type:", payload.type ?? "(nil)")
+            debugLog("ℹ️ ws unknown type:", payload.type ?? "(nil)")
             return
         }
 

@@ -6,7 +6,9 @@ struct LottieWebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
-        config.preferences.javaScriptEnabled = true
+        let webpagePreferences = WKWebpagePreferences()
+        webpagePreferences.allowsContentJavaScript = true
+        config.defaultWebpagePreferences = webpagePreferences
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.isOpaque = false

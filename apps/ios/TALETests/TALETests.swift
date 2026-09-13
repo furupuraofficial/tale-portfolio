@@ -1,36 +1,31 @@
-//
-//  TALETests.swift
-//  TALETests
-//
-//  Created by 石田悠菜 on 2025/11/17.
-//
-
 import XCTest
 @testable import TALE
 
 final class TALETests: XCTestCase {
+    func testBackendURLUsesEnvironmentBeforeInfoDictionary() {
+        let result = BackendConfiguration.resolve(
+            environment: ["TALE_BACKEND_URL": "https://api.example.com"],
+            infoDictionary: ["TALEBackendURL": "https://plist.example.com"]
+        )
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+        XCTAssertEqual(result.absoluteString, "https://api.example.com")
     }
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+    func testBackendURLUsesInfoDictionaryWhenEnvironmentIsMissing() {
+        let result = BackendConfiguration.resolve(
+            environment: [:],
+            infoDictionary: ["TALEBackendURL": " https://plist.example.com/base "]
+        )
+
+        XCTAssertEqual(result.absoluteString, "https://plist.example.com/base")
     }
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    }
+    func testBackendURLFallsBackForUnsafeOrInvalidValues() {
+        let result = BackendConfiguration.resolve(
+            environment: ["TALE_BACKEND_URL": "file:///tmp/tale"],
+            infoDictionary: ["TALEBackendURL": "not a URL"]
+        )
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
-        }
+        XCTAssertEqual(result, BackendConfiguration.fallbackURL)
     }
-
 }

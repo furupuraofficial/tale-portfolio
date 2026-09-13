@@ -14,10 +14,10 @@ final class AudioManager: ObservableObject {
         do {
             try session.setCategory(.playAndRecord,
                                     mode: .voiceChat,
-                                    options: [.defaultToSpeaker, .allowBluetooth, .allowBluetoothA2DP, .mixWithOthers])
+                                    options: [.defaultToSpeaker, .allowBluetoothHFP, .allowBluetoothA2DP, .mixWithOthers])
             try session.setActive(true, options: .notifyOthersOnDeactivation)
         } catch {
-            print("AudioManager session error:", error)
+            debugLog("AudioManager session error:", error)
         }
     }
 
@@ -40,7 +40,7 @@ final class AudioManager: ObservableObject {
         }
 
         guard let bgmURL = url else {
-            print("AudioManager: BGM file not found in bundle.")
+            debugLog("AudioManager: BGM file not found in bundle.")
             return
         }
 
@@ -52,7 +52,7 @@ final class AudioManager: ObservableObject {
             newPlayer.play()
             player = newPlayer
         } catch {
-            print("AudioManager: failed to start BGM:", error)
+            debugLog("AudioManager: failed to start BGM:", error)
         }
     }
 
@@ -62,7 +62,7 @@ final class AudioManager: ObservableObject {
 
     func playBGM(named name: String, ext: String = "mp3", volume: Float = 0.3) {
         guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
-            print("AudioManager: BGM file not found in bundle:", "\(name).\(ext)")
+            debugLog("AudioManager: BGM file not found in bundle:", "\(name).\(ext)")
             return
         }
         do {
@@ -73,7 +73,7 @@ final class AudioManager: ObservableObject {
             newPlayer.play()
             player = newPlayer
         } catch {
-            print("AudioManager: failed to start BGM:", error)
+            debugLog("AudioManager: failed to start BGM:", error)
         }
     }
 
@@ -86,7 +86,7 @@ final class AudioManager: ObservableObject {
             newPlayer.play()
             ttsPlayer = newPlayer
         } catch {
-            print("AudioManager: failed to play voice:", error)
+            debugLog("AudioManager: failed to play voice:", error)
         }
     }
 }

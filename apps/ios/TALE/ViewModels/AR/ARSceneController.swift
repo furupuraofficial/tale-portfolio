@@ -29,7 +29,7 @@ final class ARSceneController: ObservableObject {
         didSet {
             zashikiBaseOrientation = zashikiEntity?.orientation
             zashikiBasePosition = zashikiEntity?.position
-            print("✅ zashikiEntity ready:", zashikiEntity != nil)
+            debugLog("✅ zashikiEntity ready:", zashikiEntity != nil)
             if zashikiEntity != nil {
                 onZashikiReady?()       // ✅ ready になった瞬間に通知
             }
@@ -64,18 +64,18 @@ final class ARSceneController: ObservableObject {
     
     func bind(arView: ARView, worldAnchor: AnchorEntity) {
         if self.arView != nil {
-            print("⚠️ bind ignored (already bound)")
+            debugLog("⚠️ bind ignored (already bound)")
             return
         }
         
         self.arView = arView
         self.worldAnchor = worldAnchor
-        print("🔗 bind ARView:", ObjectIdentifier(arView))
+        debugLog("🔗 bind ARView:", ObjectIdentifier(arView))
     }
     
     func move(dx: Float, dz: Float) {
         guard let map = questMap else {
-            print("questMap is nil")
+            debugLog("questMap is nil")
             return
         }
         
@@ -120,16 +120,16 @@ final class ARSceneController: ObservableObject {
             zashiki.move(to: restore, relativeTo: zashiki.parent, duration: 0.25, timingFunction: .easeInOut)
         }
         
-        print("moved to:", target.translation)
+        debugLog("moved to:", target.translation)
     }
     
     private func startWalkAnimation(for duration: Double) {
         guard let walker = walkManEntity else {
-            print("⚠️ walkManEntity is nil; cannot play walk animation")
+            debugLog("⚠️ walkManEntity is nil; cannot play walk animation")
             return
         }
         guard let animation = walker.availableAnimations.first else {
-            print("⚠️ walkManEntity has no available animations")
+            debugLog("⚠️ walkManEntity has no available animations")
             return
         }
         
@@ -157,25 +157,25 @@ final class ARSceneController: ObservableObject {
     // MARK: - Animations
     
     func perform(action name: String) {
-        print("🎭 perform(action:) called with name: \(name)")
+        debugLog("🎭 perform(action:) called with name: \(name)")
         guard let zashiki = zashikiEntity else {
-            print("⚠️ zashikiEntity is nil in perform(action:)")
+            debugLog("⚠️ zashikiEntity is nil in perform(action:)")
             return
         }
         let key = name.lowercased()
-        print("🎭 Performing action key: \(key)")
+        debugLog("🎭 Performing action key: \(key)")
         switch key {
         case "wave":
-            print("🎭 Executing wave animation")
+            debugLog("🎭 Executing wave animation")
             playWave(on: zashiki)
         case "show_speech_bubble":
-            print("🎭 Executing speech lean animation")
+            debugLog("🎭 Executing speech lean animation")
             playSpeechLean(on: zashiki)
         case "bow":
-            print("🎭 Executing bow animation")
+            debugLog("🎭 Executing bow animation")
             playBow(on: zashiki)
         default:
-            print("⚠️ Unknown action key: \(key)")
+            debugLog("⚠️ Unknown action key: \(key)")
             break
         }
     }
@@ -236,12 +236,12 @@ final class ARSceneController: ObservableObject {
     
     func showAnswerTargets() {
         guard let arView else {
-            print("⚠️ arView is nil; cannot place answer targets")
+            debugLog("⚠️ arView is nil; cannot place answer targets")
             return
         }
         
         guard let prototype = loadTargetPrototype() else {
-            print("⚠️ target.usdz not found or failed to load")
+            debugLog("⚠️ target.usdz not found or failed to load")
             return
         }
         
@@ -288,7 +288,7 @@ final class ARSceneController: ObservableObject {
         ]
         
         targets.forEach { container.addChild($0) }
-        print("ARView:", ObjectIdentifier(arView))
+        debugLog("ARView:", ObjectIdentifier(arView))
     }
     
     func clearAnswerTargets() {
@@ -330,7 +330,7 @@ final class ARSceneController: ObservableObject {
         label.position = [0, 0.35, 0]
         container.addChild(label)
         
-        print("✅ placed answer target:", id, "at", position, "bounds:", bounds)
+        debugLog("✅ placed answer target:", id, "at", position, "bounds:", bounds)
         return container
     }
     
@@ -371,7 +371,7 @@ final class ARSceneController: ObservableObject {
         
         let center = CGPoint(x: arView.bounds.midX, y: arView.bounds.midY)
         guard let ray = arView.ray(through: center) else {
-            print("❌ ray(through:) failed")
+            debugLog("❌ ray(through:) failed")
             return
         }
         
@@ -391,7 +391,7 @@ final class ARSceneController: ObservableObject {
             let missPoint = ray.origin + ray.direction * 6
             lastRaycastHit = missPoint
             fireProjectile(from: ray.origin, to: missPoint)
-            print("❌ 何にも当たらなかった")
+            debugLog("❌ 何にも当たらなかった")
         }
     }
     
@@ -411,7 +411,7 @@ final class ARSceneController: ObservableObject {
     }
     
     private func missionClear(target: Entity) {
-        print("🎉 正解！")
+        debugLog("🎉 正解！")
 
         playSfx(name: "explosion", ext: "mp3", volume: 0.9)
 
@@ -446,7 +446,7 @@ final class ARSceneController: ObservableObject {
             return
         }
         guard let url = Bundle.main.url(forResource: name, withExtension: ext) else {
-            print("⚠️ SFX not found in bundle:", key)
+            debugLog("⚠️ SFX not found in bundle:", key)
             return
         }
         do {
@@ -456,7 +456,7 @@ final class ARSceneController: ObservableObject {
             player.play()
             sfxPlayers[key] = player
         } catch {
-            print("⚠️ SFX play failed:", key, error)
+            debugLog("⚠️ SFX play failed:", key, error)
         }
     }
     
@@ -550,27 +550,27 @@ final class ARSceneController: ObservableObject {
 extension ARSceneController: ARActionManaging {
     var isZashikiReady: Bool { zashikiEntity != nil }
     func playAnimation(named name: String) {
-        print("🎭 ARSceneController.playAnimation called with name: \(name)")
+        debugLog("🎭 ARSceneController.playAnimation called with name: \(name)")
         if zashikiEntity == nil {
-            print("⚠️ zashikiEntity is nil, cannot play animation")
+            debugLog("⚠️ zashikiEntity is nil, cannot play animation")
             return
         }
         perform(action: name)
     }
 
     func showSpeechBubble() {
-        print("🎭 ARSceneController.showSpeechBubble called")
+        debugLog("🎭 ARSceneController.showSpeechBubble called")
         if zashikiEntity == nil {
-            print("⚠️ zashikiEntity is nil, cannot show speech bubble")
+            debugLog("⚠️ zashikiEntity is nil, cannot show speech bubble")
             return
         }
         perform(action: "show_speech_bubble")
     }
 
     func hideSpeechBubble() {
-        print("🎭 ARSceneController.hideSpeechBubble called")
+        debugLog("🎭 ARSceneController.hideSpeechBubble called")
         guard let zashiki = zashikiEntity else {
-            print("⚠️ zashikiEntity is nil, cannot hide speech bubble")
+            debugLog("⚠️ zashikiEntity is nil, cannot hide speech bubble")
             return
         }
         let baseOrientation = zashikiBaseOrientation ?? zashiki.orientation
@@ -580,9 +580,9 @@ extension ARSceneController: ARActionManaging {
     }
 
     func setIdle() {
-        print("🎭 ARSceneController.setIdle called")
+        debugLog("🎭 ARSceneController.setIdle called")
         guard let zashiki = zashikiEntity else {
-            print("⚠️ zashikiEntity is nil, cannot set idle")
+            debugLog("⚠️ zashikiEntity is nil, cannot set idle")
             return
         }
         let baseOrientation = zashikiBaseOrientation ?? zashiki.orientation

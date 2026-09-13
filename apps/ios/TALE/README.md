@@ -109,6 +109,18 @@ open TALE.xcodeproj
 2. Archiveが完了したら、Distributeを選択
 3. 配布方法を選択（App Store、Ad Hoc、Enterpriseなど）
 
+### 単体テスト
+
+利用可能なiOSシミュレーターを指定して実行します。
+
+```bash
+xcodebuild test \
+  -project TALE.xcodeproj \
+  -scheme TALE \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
+  -only-testing:TALETests
+```
+
 ## アーキテクチャ
 
 このプロジェクトはMVVMアーキテクチャパターンを採用しています：

@@ -86,6 +86,7 @@ AR機能の確認にはARKit対応の実機が必要です。詳細は[iOS READM
 ```bash
 cd services/api && go test ./...
 cd apps/admin-web && npm run lint && npm test && npm run build
+# apps/ios では README 記載のxcodebuild testを実行
 ```
 
 ## 現在の制約
