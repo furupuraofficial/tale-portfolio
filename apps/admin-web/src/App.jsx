@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import './App.css';
 
-const rawBase = process.env.REACT_APP_API_BASE || '';
+const rawBase = import.meta.env.VITE_API_BASE || '';
 const API_BASE = rawBase.replace(/\/$/, '');
 const withBase = (path) => (API_BASE ? `${API_BASE}${path}` : path);
 const createEmptyAction = () => ({ type: '', target: '', paramsText: '{}' });
@@ -15,7 +15,7 @@ const emptyForm = () => ({
 
 function App() {
   const [rules, setRules] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
@@ -39,7 +39,7 @@ function App() {
     setForm(emptyForm());
   }, []);
 
-  const selectRule = useCallback((rule) => {
+  const selectRule = useCallback((rule, { clearFeedback = true } = {}) => {
     setSelectedId(rule.id);
     setForm({
       id: rule.id,
@@ -55,13 +55,13 @@ function App() {
             }))
           : [createEmptyAction()],
     });
-    setStatus('');
-    setError('');
+    if (clearFeedback) {
+      setStatus('');
+      setError('');
+    }
   }, []);
 
-  const loadRules = useCallback(async () => {
-    setLoading(true);
-    setError('');
+  const loadRules = useCallback(async (selectionToPreserve = '') => {
     try {
       const res = await fetch(withBase('/rule/items'));
       if (!res.ok) {
@@ -69,10 +69,10 @@ function App() {
       }
       const data = await res.json();
       setRules(data);
-      if (selectedId) {
-        const match = data.find((r) => r.id === selectedId);
+      if (selectionToPreserve) {
+        const match = data.find((r) => r.id === selectionToPreserve);
         if (match) {
-          selectRule(match);
+          selectRule(match, { clearFeedback: false });
         } else {
           resetForm();
         }
@@ -82,11 +82,19 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }, [selectedId, selectRule, resetForm]);
+  }, [selectRule, resetForm]);
 
   useEffect(() => {
+    // The rule list is external state and must be synchronized on first mount.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadRules();
   }, [loadRules]);
+
+  function reloadRules() {
+    setLoading(true);
+    setError('');
+    loadRules(selectedId);
+  }
 
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -130,7 +138,7 @@ function App() {
       if (action.paramsText.trim()) {
         try {
           params = JSON.parse(action.paramsText);
-        } catch (err) {
+        } catch {
           setSaving(false);
           setError('AR Actionのパラメーターは有効なJSONで入力してください。');
           return;
@@ -190,7 +198,7 @@ function App() {
         setStatus(selectedId ? 'ルールを更新しました' : 'ルールを作成しました');
       }
 
-      await loadRules();
+      await loadRules(newId || selectedId);
       if (!selectedId) {
         resetForm();
       } else if (newId && newId !== selectedId) {
@@ -233,7 +241,7 @@ function App() {
           <h1>スクリプト返信とARアクションを管理</h1>
           <p className="lede">会話エンジンで使うルールを読み込み、追加・編集・削除できます。変更はすべて即座にバックエンドAPIへ反映されます。</p>
           <div className="hero-actions">
-            <button className="ghost" onClick={loadRules} disabled={loading}>
+            <button className="ghost" onClick={reloadRules} disabled={loading}>
               {loading ? '再読み込み中…' : '再読み込み'}
             </button>
             <button className="ghost" onClick={resetForm}>

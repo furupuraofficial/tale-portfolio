@@ -1,5 +1,6 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import App from './App';
 
 const rules = [
@@ -13,29 +14,30 @@ const rules = [
 ];
 
 beforeEach(() => {
-  global.fetch = jest.fn().mockResolvedValue({
+  global.fetch = vi.fn().mockResolvedValue({
     ok: true,
     json: async () => rules,
   });
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 test('loads rules and selects one for editing', async () => {
+  const user = userEvent.setup();
   render(<App />);
 
   const question = await screen.findByText('温泉はどこですか？');
   expect(global.fetch).toHaveBeenCalledWith('/rule/items');
 
-  await userEvent.click(question);
+  await user.click(question);
 
   const form = screen.getByRole('form');
   expect(within(form).getByDisplayValue('bath-rule')).toBeInTheDocument();
   expect(within(form).getByDisplayValue('温泉, 入浴')).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'ルールを更新' })).toBeEnabled();
-  await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
+  expect(global.fetch).toHaveBeenCalledTimes(1);
 });
 
 test('shows an API error without hiding the editor', async () => {

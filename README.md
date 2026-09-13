@@ -44,7 +44,7 @@ flowchart LR
 | Backend | Go, WebSocket, SSE, PortAudio |
 | AI | OpenAI Realtime API, Whisper, Text-to-Speech, Gemini |
 | Data | PostgreSQL, Docker Compose |
-| Admin | React, Testing Library |
+| Admin | React, Vite, Vitest, Testing Library |
 
 ## セットアップ
 
@@ -64,11 +64,13 @@ APIキーを利用するため、実行前に各サービスの利用条件と�
 
 ### Admin Web
 
+Node.js 22.12以上が必要です。
+
 ```bash
 cd apps/admin-web
 cp .env.example .env
 npm ci
-npm start
+npm run dev
 ```
 
 ### iOS
@@ -83,7 +85,7 @@ AR機能の確認にはARKit対応の実機が必要です。詳細は[iOS READM
 
 ```bash
 cd services/api && go test ./...
-cd apps/admin-web && npm test -- --watchAll=false
+cd apps/admin-web && npm run lint && npm test && npm run build
 ```
 
 ## 現在の制約

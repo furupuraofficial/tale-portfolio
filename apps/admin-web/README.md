@@ -11,19 +11,22 @@ TALEの会話ルールと、それに対応するARアクションを管理す�
 
 ## セットアップ
 
+Node.js 22.12以上が必要です。
+
 ```bash
 cp .env.example .env
 npm ci
-npm start
+npm run dev
 ```
 
-開発時は空のままにするとReactのdev proxy経由で `http://localhost:8080` へ接続します。別オリジンへ接続する場合は `REACT_APP_API_BASE` を設定してください。
+開発時は空のままにするとViteのdev proxy経由で `http://localhost:8080` へ接続します。別オリジンへ接続する場合は `VITE_API_BASE` を設定してください。
 
 ## コマンド
 
 ```bash
-npm test -- --watchAll=false
+npm test
 npm run build
+npm run lint
 ```
 
 ## API
