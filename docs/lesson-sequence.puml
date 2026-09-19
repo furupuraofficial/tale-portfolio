@@ -1,0 +1,55 @@
+@startuml
+title レッスン開始と次ステップへの進行
+autonumber
+
+actor Learner as user
+participant "iOS\nBackendClient" as ios
+participant "Go API\nlesson handler" as api
+participant "lesson.Repository" as repo
+database PostgreSQL as db
+participant "lesson.Session\n(プロセス内)" as session
+participant "Realtime Client" as realtime
+participant "OpenAI\n翻訳 / TTS" as ai
+participant "WebSocket / SSE" as stream
+
+user -> ios : レッスン開始
+ios -> api : POST /lessons/{id}/start
+api -> repo : GetStepsByLessonID(id)
+repo -> db : ステップとARアクションを取得
+db --> repo : step_order順の行
+repo --> api : []LessonStep
+api -> session : NewSession(id, steps)
+api -> api : lesson_idをキーにSessionを保存
+api ->> realtime : SpeakLessonStep(最初のステップ)
+api --> ios : status=started, current=0, step
+realtime -> ai : 必要に応じて翻訳 / TTS生成
+ai --> realtime : テキスト / PCM
+realtime -> stream : 字幕・音声・AR指示
+stream --> ios : WebSocket / SSEイベント
+ios -> ios : ステップ種別に応じて表示・再生
+
+loop 次のステップがある間
+    user -> ios : 次へ
+    ios -> api : POST /lessons/{id}/next
+    api -> session : Advance()
+    session --> api : 次のステップ
+    api ->> realtime : SpeakLessonStep(次のステップ)
+    api --> ios : status=in_progress, current, step
+    realtime -> ai : 必要に応じて翻訳 / TTS生成
+    ai --> realtime : テキスト / PCM
+    realtime -> stream : 字幕・音声・AR指示
+    stream --> ios : WebSocket / SSEイベント
+end
+
+user -> ios : 最終ステップの次へ
+ios -> api : POST /lessons/{id}/next
+api -> session : Advance()
+session --> api : completed
+api -> api : Sessionを削除
+api --> ios : status=completed
+
+note over api,session
+  Sessionはlesson_id単位で共有される。
+  利用者ごとの分離と永続化は未実装。
+end note
+@enduml
